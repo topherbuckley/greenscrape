@@ -28,11 +28,10 @@ $client = new Client();
 for ($idx = 1; $idx <= $total ; $idx++) {
 
 	echo "<br>index = $idx, page_count = $page_count<br>";
-	echo "<br>Memory Currently Alloted to PHP: " . memory_get_usage() . "<br>";
+	//echo "<br>Memory Currently Alloted to PHP: " . memory_get_usage() . "<br>";
 
 	ob_flush();
 	flush();
-
 
 	$url_to_traverse = $base_url_to_traverse . $idx;
 	$crawler = $client->request('GET', $url_to_traverse);
@@ -41,10 +40,7 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 	if($status_code==200){
 		
 		$th_count = $crawler->filter('table.detail-content-table.js-impression > tr > th')->count();
-		
-		$headers = array();
-		$data_array = array();
-		$data_table = array();
+		$headers = [];
 
 		if ($th_count) {
 			$headers = $crawler->filter('table.detail-content-table.js-impression > tr > th')->each(function($node, $i) use($headers) {
@@ -58,8 +54,7 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 		foreach ($new_headers as $key => $value) {
 			$new_headers_full[]= $value;
 		}
-		
-		//$new_headers_count = count($new_headers);
+
 		$page_count++;
 
 	} 
