@@ -1,5 +1,8 @@
 Greenscrape Last Site on index = 4076
 
+3191 pages with data. 4100 total pages scraped
+Code Timer = 4893.704seconds
+
 forkwell jobs(250)
 Paiza(340)
 Swipee(350)

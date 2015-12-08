@@ -15,7 +15,7 @@ $page_count = 0;
 $idx = 1;
 $total_pages_searched = 0;
 $new_headers_full = [];
-$total = 5;
+$total = 4100;
 
 $base_url_to_traverse = 'http://www.green-japan.com/company/';
 $result = [];
