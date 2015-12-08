@@ -125,4 +125,45 @@ function mssafe_csv($filepath, $data, $header = array())
     }
     return true;
 }
+
+function selective_format($site, $key, $value){
+        //I need to format columns here. 
+        
+        //Within the 代表者氏名 column, "代表取締役社長" needs to be deleted from each entry if exists. 
+        //within the 本社所在地 column needs to be split into 3 columns; zip / prefecture / city / others 
+
+    switch ($site) {
+
+        case 'green-japan':
+            
+            switch ($key) {
+
+                case '代表者氏名':
+                    # code...
+                    break;
+
+                case '本社所在地':
+                    # code...
+                    break;
+                
+                default:
+                    # code...
+                    break;
+            }
+
+        case '2':
+            # code...
+            break;
+
+        case '3':
+            # code...
+            break;
+        
+        default:
+            # code...
+            break;
+    }
+
+}
+
 ?>

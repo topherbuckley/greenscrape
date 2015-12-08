@@ -7,6 +7,8 @@ set_time_limit(100000);
 
 if (ob_get_level() == 0) ob_start();
 
+header('Content-Type: text/html; charset=utf-8');
+
 //code timer
 $timer = new timer();
 $timer->start();
@@ -15,7 +17,7 @@ $page_count = 0;
 $idx = 1;
 $total_pages_searched = 0;
 $new_headers_full = [];
-$total = 4100;
+$total = 18;//4100;
 
 $base_url_to_traverse = 'http://www.green-japan.com/company/';
 $result = [];
@@ -113,15 +115,93 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 			$headers[$i+3] = $headers2[$i];
 		}
 
+		//add in header columns for 株式会社_flag.  
+		//It seems like a waste of time to check this every time...wonder if I can speed this up somehow??
+		if (in_array("会社名", $headers)) {
+			$key = array_search('会社名', $headers);
+			array_splice($headers, $key+1, 0, '株式会社_flag');
+
+			//Within the 会社名 column needs to remove 株式会社 and enter 1,2,3 as a flag in an additional column for 1=前株, 2=後株, 3=株なし
+            $company_name = $data_array[$key];
+
+            if (mb_substr($company_name, 0, 4)=='株式会社') {
+                $company_name = mb_substr($company_name, 4);
+                $flag = 1;
+            }
+            elseif (mb_substr($company_name, -4)=='株式会社') {
+                $company_name = mb_substr($company_name, 0,-4);
+				$flag = 2;
+            }
+            else{
+                $flag = 3;
+            }
+
+			array_splice($data_array, $key+1, 0, $flag);
+
+		}
+
+		//within the 本社所在地 column needs to be split into 3 columns; zip / prefecture / city / others
+
+		if (in_array("本社所在地", $headers)) {
+			$key = array_search('本社所在地', $headers);
+			$address = $data_array[$key];
+            array_splice($headers, $key+1, 0, 'others');
+            array_splice($headers, $key+1, 0, 'city');
+            array_splice($headers, $key+1, 0, 'prefecture');
+            array_splice($headers, $key+1, 0, 'zip');
+
+            if (preg_match('/\d\d\d-\d\d\d\d/', $address, $matches[0])) {
+               $zip = $matches[0];
+               echo "<br>zip = ";
+               print_r($zip);
+               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+            }else{
+            	$zip = "No Data";
+            }
+
+            if (preg_match('/([^\s;]*?)[都道府県]/u', $address, $matches[0])) {
+               $prefecture = $matches[0];
+               echo "<br>prefecture = ";
+               print_r($prefecture);
+               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+            }else{
+            	$prefecture = "No Data";
+            }
+
+            if (preg_match('/not coded yet/', $address, $matches[0])) {
+               $city = $matches[0];
+               echo "<br>city = $city<br>";
+               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+            }else{
+            	$city = "No Data";
+            }
+
+            if (preg_match('/not coded yet/', $address, $matches[0])) {
+               $others = $matches[0];
+               echo "<br>others = $others<br>";
+               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+            }else{
+            	$others = "No Data";
+            }
+
+            array_splice($data_array, $key+1, 0, $others);
+            array_splice($data_array, $key+1, 0, $city);
+            array_splice($data_array, $key+1, 0, $prefecture);
+            array_splice($data_array, $key+1, 0, $zip);
+
+		}
+
 		//Find new headers and add to compounding array $new_headers_full
 		$new_headers=array_diff($headers,$new_headers_full);
 
 		/*for ($i=0; $i < count($new_headers); $i++) { 
 			$new_headers_full[$i+3]= $new_headers[$i];
 		}*/
+
 		$new_headers_full = array_merge($new_headers_full,$new_headers);
 
-		//result represents the 2D array which will include headers and data, and be printed to csv. Not sure if pushing this full array every loop is quicker than an if statement to check new header count. ??
+		//result represents the 2D array which will include headers and data, and be printed to csv. 
+		//Not sure if pushing this full array every loop is quicker than an if statement to check new header count. ??
 		$result[0] = $new_headers_full;
 		$result[$page_count+1] = [];
 		$result[$page_count+1] = array_pad(array(),count($new_headers_full),null) ;
@@ -138,6 +218,10 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 
 				if ($key == $new_header) {
 
+					//the following line REQUIRES that the site name remain in column 3 (index 2). 
+					$site = $result[$page_count+1][2];
+					//list($value2,$flag) = selective_format($site, $key, $value);
+
 					$result[$page_count+1][$key2] = $value;
 
 				}
@@ -150,7 +234,6 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 $total_pages_searched++;
 }
 
-printarray($result);
 //$unique_headers = implode(",",$new_headers_full);
 mssafe_csv('../results/mssafe_greenscrape_results.csv', $result);
 
@@ -166,7 +249,7 @@ for ($row=0; $row < count($result); $row++) {
 fclose($file);
 
 //file_put_contents("greenscrape_unique_headers.csv", $unique_headers);
-echo $page_count . " pages with data. $total_pages_searched total pages scraped";
+echo "Successfully scraped " . $page_count . " pages with data. $total_pages_searched total pages scraped";
 $timer->stop();
 echo "<br>Code Timer = ";
 echo $timer->result();
