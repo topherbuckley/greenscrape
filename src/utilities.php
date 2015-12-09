@@ -129,8 +129,8 @@ function mssafe_csv($filepath, $data, $header = array())
 function selective_format($site, $key, $value){
         //I need to format columns here. 
         
-        //Within the 代表者氏名 column, "代表取締役社長" needs to be deleted from each entry if exists. 
-        //within the 本社所在地 column needs to be split into 3 columns; zip / prefecture / city / others 
+        
+         
 
     switch ($site) {
 
@@ -164,6 +164,138 @@ function selective_format($site, $key, $value){
             break;
     }
 
+}
+
+function format_entrys($headers2,$data_array2){
+    //Append data and header elements to the first 3 indexing elements
+    for ($i=0; $i < count($data_array2); $i++) { 
+
+        //remove html from individual values. 
+        if (preg_match('/<.+>/', $data_array2[$i])) {
+           $data_array2[$i] = preg_replace('/<.*?>/', '',$data_array2[$i]);
+           //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+        }
+
+        //remove line breaks from individual values. 
+        if (preg_match('/[\n\r]/', $data_array2[$i])) {
+           $data_array2[$i] = preg_replace('/[\n\r]/', '',$data_array2[$i],1);
+           $data_array2[$i] = preg_replace('/[\n\r]/', ';',$data_array2[$i]);
+           $data_array2[$i] = preg_replace('/;(\s+)?$/', '',$data_array2[$i],1);
+        }
+
+        //remove extra whitespace from individual values. 
+        if (preg_match('/[ \t]/', $data_array2[$i])) {
+           $data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+        }
+
+        $data_array[$i+3] = $data_array2[$i];
+        $headers[$i+3] = $headers2[$i];
+
+        
+    }
+    return array($headers,$data_array);
+}
+
+function check_for_company($headers,$data_array){
+
+    //add in header columns for 株式会社_flag.  
+    //It seems like a waste of time to check this every time...wonder if I can speed this up somehow??
+    if (in_array("会社名", $headers)) {
+        $key = array_search('会社名', $headers);
+        array_splice($headers, $key+1, 0, '株式会社_flag');
+
+        //Within the 会社名 column needs to remove 株式会社 and enter 1,2,3 as a flag in an additional column for 1=前株, 2=後株, 3=株なし
+        $company_name = $data_array[$key];
+
+        if (mb_substr($company_name, 0, 4)=='株式会社') {
+            $company_name = mb_substr($company_name, 4);
+            $flag = 1;
+        }
+        elseif (mb_substr($company_name, -4)=='株式会社') {
+            $company_name = mb_substr($company_name, 0,-4);
+            $flag = 2;
+        }
+        else{
+            $flag = 3;
+        }
+
+        array_splice($data_array, $key+1, 0, $flag);
+
+    }
+    return array($headers,$data_array);
+}
+
+function split_address($headers,$data_array){
+    //within the 本社所在地 column needs to be split into 3 columns; zip / prefecture / city / others
+
+    if (in_array("本社所在地", $headers)) {
+        $key = array_search('本社所在地', $headers);
+        $address = $data_array[$key];
+        array_splice($headers, $key+1, 0, 'others');
+        array_splice($headers, $key+1, 0, 'city');
+        array_splice($headers, $key+1, 0, 'prefecture');
+        array_splice($headers, $key+1, 0, 'zip');
+        echo "<br>Original Address = " . $address;
+        if (preg_match('/\d\d\d-\d\d\d\d/u', $address, $matches[0])) {
+           $zip = $matches[0][0];
+           echo "<br>zip = ";
+           print_r($zip);
+           $address = preg_replace("/.*\d\d\d-\d\d\d\d;?/u", "", $address);
+           //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+        }else{
+            $zip = "No Data";
+        }
+
+        if (preg_match('/([^\s;]*?)[都道府県]/u', $address, $matches[0])) {
+           $prefecture = $matches[0][0];
+           echo "<br>prefecture = ";
+           print_r($prefecture);
+           //echo "<br>address before = " . $address;
+           $address = preg_replace("/([^\s;]*?)[都道府県]/u", "", $address);
+           //echo "<br>address after = " . $address;
+
+           //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+        }else{
+            $prefecture = "No Data";
+        }
+
+        //need if logic here to see if no prefecture found. Some entries don't have prefectures, so using the prefecture characters as a starting point won't work. See index 237
+        if ($prefecture!="No Data"){
+            if (preg_match('/.*[市区町村]/u', $address, $matches[0])) {
+               $city = $matches[0][0];
+               echo "<br>city = $city";
+               $address = preg_replace("/.*[市区町村]/u", "", $address);
+               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+            }else{
+                $city = "No Data";
+            }   
+        }else{
+            if (preg_match('/(?<=[都道府県]).*[市区町村]/u', $address, $matches[0])) {
+               $city = $matches[0][0];
+               echo "<br>city = $city";
+               preg_replace('/(?<=[都道府県]).*[市区町村]/u', "", $address);
+               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+            }else{
+                $city = "No Data";
+            }   
+        }
+        
+
+        if (preg_match('/.*(?=;)?/', $address, $matches[0])) {
+           $others = $matches[0][0];
+           echo "<br>others = $others<br>";
+           //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
+        }else{
+            $others = "No Data";
+        }
+
+        array_splice($data_array, $key+1, 0, $others);
+        array_splice($data_array, $key+1, 0, $city);
+        array_splice($data_array, $key+1, 0, $prefecture);
+        array_splice($data_array, $key+1, 0, $zip);
+
+    }
+    return array($headers,$data_array);
 }
 
 ?>

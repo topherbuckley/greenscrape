@@ -17,7 +17,7 @@ $page_count = 0;
 $idx = 1;
 $total_pages_searched = 0;
 $new_headers_full = [];
-$total = 18;//4100;
+$total = 20;//4100;
 
 $base_url_to_traverse = 'http://www.green-japan.com/company/';
 $result = [];
@@ -32,7 +32,7 @@ $headers = array();
 
 for ($idx = 1; $idx <= $total ; $idx++) {
 
-	//echo "<br>index = $idx, page_count = $page_count<br>";
+	
 	//echo "<br>Memory Currently Alloted to PHP: " . memory_get_usage() . "<br>";
 
 	//ob_flush();
@@ -46,6 +46,7 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 	//if($status_code==200 && preg_match('/お探しのページは見つかりませんでした./', $page_title)==0){
 	
 	if($status_code==200){
+		echo "<br>index = $idx, page_count = $page_count.";
 		
 		$th_count = $crawler->filter('table.detail-content-table.js-impression > tr > th')->count();
 		$td_count = $crawler->filter('table.detail-content-table.js-impression > tr > td')->count();
@@ -90,106 +91,12 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 			});
 		}
 
-		//Append data and header elements to the first 3 indexing elements
-		for ($i=0; $i < count($data_array2); $i++) { 
-
-			//remove html from individual values. 
-			if (preg_match('/<.+>/', $data_array2[$i])) {
-               $data_array2[$i] = preg_replace('/<.*?>/', '',$data_array2[$i]);
-               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
-            }
-
-			//remove line breaks from individual values. 
-			if (preg_match('/[\n\r]/', $data_array2[$i])) {
-               $data_array2[$i] = preg_replace('/[\n\r]/', '',$data_array2[$i],1);
-               $data_array2[$i] = preg_replace('/[\n\r]/', ';',$data_array2[$i]);
-               $data_array2[$i] = preg_replace('/;(\s+)?$/', '',$data_array2[$i],1);
-            }
-
-			//remove extra whitespace from individual values. 
-			if (preg_match('/[ \t]/', $data_array2[$i])) {
-               $data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
-            }
-
-			$data_array[$i+3] = $data_array2[$i];
-			$headers[$i+3] = $headers2[$i];
-		}
-
-		//add in header columns for 株式会社_flag.  
-		//It seems like a waste of time to check this every time...wonder if I can speed this up somehow??
-		if (in_array("会社名", $headers)) {
-			$key = array_search('会社名', $headers);
-			array_splice($headers, $key+1, 0, '株式会社_flag');
-
-			//Within the 会社名 column needs to remove 株式会社 and enter 1,2,3 as a flag in an additional column for 1=前株, 2=後株, 3=株なし
-            $company_name = $data_array[$key];
-
-            if (mb_substr($company_name, 0, 4)=='株式会社') {
-                $company_name = mb_substr($company_name, 4);
-                $flag = 1;
-            }
-            elseif (mb_substr($company_name, -4)=='株式会社') {
-                $company_name = mb_substr($company_name, 0,-4);
-				$flag = 2;
-            }
-            else{
-                $flag = 3;
-            }
-
-			array_splice($data_array, $key+1, 0, $flag);
-
-		}
-
-		//within the 本社所在地 column needs to be split into 3 columns; zip / prefecture / city / others
-
-		if (in_array("本社所在地", $headers)) {
-			$key = array_search('本社所在地', $headers);
-			$address = $data_array[$key];
-            array_splice($headers, $key+1, 0, 'others');
-            array_splice($headers, $key+1, 0, 'city');
-            array_splice($headers, $key+1, 0, 'prefecture');
-            array_splice($headers, $key+1, 0, 'zip');
-
-            if (preg_match('/\d\d\d-\d\d\d\d/', $address, $matches[0])) {
-               $zip = $matches[0];
-               echo "<br>zip = ";
-               print_r($zip);
-               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
-            }else{
-            	$zip = "No Data";
-            }
-
-            if (preg_match('/([^\s;]*?)[都道府県]/u', $address, $matches[0])) {
-               $prefecture = $matches[0];
-               echo "<br>prefecture = ";
-               print_r($prefecture);
-               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
-            }else{
-            	$prefecture = "No Data";
-            }
-
-            if (preg_match('/not coded yet/', $address, $matches[0])) {
-               $city = $matches[0];
-               echo "<br>city = $city<br>";
-               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
-            }else{
-            	$city = "No Data";
-            }
-
-            if (preg_match('/not coded yet/', $address, $matches[0])) {
-               $others = $matches[0];
-               echo "<br>others = $others<br>";
-               //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
-            }else{
-            	$others = "No Data";
-            }
-
-            array_splice($data_array, $key+1, 0, $others);
-            array_splice($data_array, $key+1, 0, $city);
-            array_splice($data_array, $key+1, 0, $prefecture);
-            array_splice($data_array, $key+1, 0, $zip);
-
-		}
+		//Take out html tags and other formatting issues
+		list($headers,$data_array) = format_entrys($headers2,$data_array2);
+		//removes 株式会社 from company name if present and and enter 1,2,3 as a flag in an additional column for 1=前株, 2=後株, 3=株なし
+		list($headers,$data_array) = check_for_company($headers,$data_array);
+		//splits the address into zip,prefecture,city,others
+		list($headers,$data_array) = split_address($headers,$data_array);
 
 		//Find new headers and add to compounding array $new_headers_full
 		$new_headers=array_diff($headers,$new_headers_full);
@@ -210,6 +117,7 @@ for ($idx = 1; $idx <= $total ; $idx++) {
 		//add two slots at begining for index and page count, and site name
 		//array_unshift($headers,"0", "1", "2");
 		//array_unshift($data_array,"N/A","N/A","N/A");
+
 		$data_table = array_combine($headers,$data_array);	
 
 		foreach ($data_table as $key => $value) {
@@ -249,7 +157,7 @@ for ($row=0; $row < count($result); $row++) {
 fclose($file);
 
 //file_put_contents("greenscrape_unique_headers.csv", $unique_headers);
-echo "Successfully scraped " . $page_count . " pages with data. $total_pages_searched total pages scraped";
+echo "<br>Successfully scraped " . $page_count . " pages with data. $total_pages_searched total pages scraped";
 $timer->stop();
 echo "<br>Code Timer = ";
 echo $timer->result();
