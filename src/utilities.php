@@ -259,16 +259,18 @@ function split_address($headers,$data_array){
             $prefecture = "No Data";
         }
 
-        //need if logic here to see if no prefecture found. Some entries don't have prefectures, so using the prefecture characters as a starting point won't work. See index 237
+        //the below regex is not perfect, but its the best i can think of at the moment. The flaw would occur if 
         if ($prefecture!="No Data"){
-            if (preg_match('/.*[市区町村]/u', $address, $matches[0])) {
+            //need a way to stop regex search if number comes before [市町村区] don't search any longer. Assuming no prefecture/city/ward or anything else has a number in its name.
+            if (preg_match('/(.+?市)?(.+?[町村区])?(.+?[村区])?(.+?区)?/u', $address, $matches[0])) {
                $city = $matches[0][0];
                echo "<br>city = $city";
-               $address = preg_replace("/.*[市区町村]/u", "", $address);
+               $address = preg_replace("/(.+?市)?(.+?[町村区])?(.+?[村区])?(.+?区)?/u", "", $address);
                //$data_array2[$i] = preg_replace('/[  \t]/', '',$data_array2[$i]);
             }else{
                 $city = "No Data";
-            }   
+            }  
+            // I don't think I need this else statement now that I clear the prefecture from the address variable before getting here.  
         }else{
             if (preg_match('/(?<=[都道府県]).*[市区町村]/u', $address, $matches[0])) {
                $city = $matches[0][0];
