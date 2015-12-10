@@ -1,0 +1,46 @@
+
+index = 2, page_count = 0.
+Original Address = 東京都品川区東五反田1丁目13番12号　COI五反田ビル10階
+prefecture = 東京都
+city = 品川区
+others = 東五反田1丁目13番12号　COI五反田ビル10階
+
+index = 3, page_count = 1.
+Original Address = 東京都港区芝5丁目31番19号　田町全日空ビル2F
+prefecture = 東京都
+city = 港区芝5丁目31番19号　田町
+others = 全日空ビル2F
+
+index = 4, page_count = 2.
+Original Address = 東京都中央区京橋1-5-8
+prefecture = 東京都
+city = 中央区
+others = 京橋1-5-8
+
+index = 6, page_count = 3.
+Original Address = 東京都中央区晴海１丁目８番１２号
+prefecture = 東京都
+city = 中央区
+others = 晴海１丁目８番１２号
+
+index = 10, page_count = 4.
+Original Address = 東京都東京都品川区東品川4丁目12番4号　品川シーサイドパークタワー19F
+prefecture = 東京都
+city = 品川区
+others = 東品川4丁目12番4号　品川シーサイドパークタワー19F
+
+index = 17, page_count = 5.
+Original Address = 〒160-0023;東京都新宿区西新宿6-16-6タツミビル3F
+zip = 160-0023
+prefecture = 東京都
+city = 新宿区
+others = 西新宿6-16-6タツミビル3F
+
+index = 18, page_count = 6.
+Original Address = 東京都東京都台東区柳橋1-12-5　玉沖柳橋ビル2階
+prefecture = 東京都
+city = 台東区
+others = 柳橋1-12-5　玉沖柳橋ビル2階
+
+Successfully scraped 7 pages with data. 20 total pages scraped
+Code Timer = 12.2963seconds
